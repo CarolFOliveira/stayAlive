@@ -136,7 +136,8 @@ class Projectile:
         self.direction = direction
         self.pos = (x * CELL_SIZE + CELL_SIZE // 2, y * CELL_SIZE + CELL_SIZE // 2)
         self.speed = 15  
-        self.actor = Actor('projectile', pos=self.pos)    
+        self.actor = Actor('projectile', pos=self.pos) 
+           
     def update(self, dt, game_map):
         dx, dy = self.direction
         self.grid_x += dx
@@ -270,14 +271,17 @@ class MainGame:
         ]
         self.spawn_collectible() 
         self.buttons = []
+        sounds.bg_music.play(-1)
+        sounds.bg_music.set_volume(0.3)
         self.music_on = True
         self.score = 0
-        self.game_over_msg = ""
+        self.points = ""
         self.create_menu_buttons()
         self.collectibles
         #cria coins em posições aleatórias a cada 5 segundos
         clock.schedule_interval(self.spawn_collectible, 5.0)
-        music.play('bg_music')
+       
+        
     def create_menu_buttons(self):
         self.buttons = []
         self.buttons.append(Button(Rect((WIDTH//2 - 80, HEIGHT//2 - 60, 160, 40)), "Start Game", self.start_game))
@@ -323,15 +327,15 @@ class MainGame:
         ]    
     def toggle_music(self):
         if self.music_on:
-            music.stop()
+            sounds.bg_music.stop()
             self.music_on = False
         else:
-            music.play('bg_music')
-            music.set_volume(0.2)
+            sounds.bg_music.play(-1)
             self.music_on = True
     def quit_game(self):
         exit()
     def update(self, dt):
+        
         if self.state == STATE_MENU:
             pass  
         elif self.state == STATE_PLAYING:
@@ -346,6 +350,8 @@ class MainGame:
                 px, py = proj.get_grid_pos()
                 for enemy in self.enemies[:]:
                     if (px, py) == enemy.get_grid_pos():
+                        sounds.hit.play()
+                        sounds.hit.set_volume(0.2)
                         self.enemies.remove(enemy)
                         if proj in self.projectiles:
                             self.projectiles.remove(proj)
@@ -355,6 +361,8 @@ class MainGame:
             px, py = self.player.get_grid_pos()
             for item in self.collectibles[:]:
                 if (px, py) == item.get_grid_pos():
+                    sounds.collect.play()
+                    sounds.collect.set_volume(0.2)
                     self.coin_collect = True
                     self.collectibles.remove(item)
                     self.score += 5
@@ -367,7 +375,9 @@ class MainGame:
                 ex, ey = enemy.get_grid_pos()
                 if px == ex and py == ey:
                     self.state = STATE_GAMEOVER
-                    self.game_over_msg = "Game Over! You were caught!"
+                    sounds.bg_music.stop()
+                    sounds.lose.play()
+                    self.points = f"Score: {self.score}"
         elif self.state == STATE_GAMEOVER:
             pass     
     def draw(self):
@@ -387,7 +397,9 @@ class MainGame:
                 projectile.draw()
             screen.draw.text(f"Score: {self.score}", topleft=(20, 10), fontsize=30, color="white")    
         elif self.state == STATE_GAMEOVER:
-            screen.draw.text(self.game_over_msg, center=(WIDTH // 2, HEIGHT // 2), fontsize=48, color="red")        
+            screen.blit('skeleton',(10,20))
+            screen.blit('game_over',(350,10))
+            screen.draw.text(self.points, center=(WIDTH // 2+150, HEIGHT // 2), fontsize=40, color="yellow")        
     def on_mouse_down(self, pos, button):
         if self.state == STATE_MENU and button == mouse.LEFT:
             for btn in self.buttons:
